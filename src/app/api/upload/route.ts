@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Allow up to 60 seconds for file upload + catbox.moe relay
-export const maxDuration = 60;
+// Timeout: configured in netlify.toml [functions] section (10s Starter / 26s paid)
+// maxDuration is Vercel-specific and is ignored on Netlify
 
 const CATBOX_API = 'https://catbox.moe/user/api.php';
 

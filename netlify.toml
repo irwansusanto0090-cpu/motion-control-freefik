@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Netlify auto-detects Next.js and includes @netlify/plugin-nextjs automatically.
+# API routes (Route Handlers) are converted to Netlify Functions.
+
+[functions]
+  # Use Node.js file tracing bundler — required for Next.js API routes
+  node_bundler = "nft"
+  # Set function timeout: 26s max on paid plans, 10s on free (Starter)
+  included_files = ["**"]
+
+# Environment variables — set these in Netlify dashboard (Site settings → Environment variables)
+# FREEPIK_API_KEY = your_key_here

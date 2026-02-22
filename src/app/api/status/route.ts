@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getModelById } from '@/lib/models';
 
-// Allow up to 30 seconds for status check response
-export const maxDuration = 30;
+// Timeout: configured in netlify.toml (10s Starter / 26s paid)
+// maxDuration is Vercel-specific and is ignored on Netlify
 
 const FREEPIK_API_BASE = 'https://api.freepik.com';
 
