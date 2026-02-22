@@ -79,25 +79,35 @@ export default function HomePage() {
     }));
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // Upload directly from browser to catbox.moe — bypasses Netlify Function limits
+      const catboxForm = new FormData();
+      catboxForm.append('reqtype', 'fileupload');
+      catboxForm.append('fileToUpload', file, file.name);
 
-      const res = await fetch('/api/upload', {
+      const res = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
-        body: formData,
+        body: catboxForm,
       });
-
-      const result = await res.json();
 
       if (!res.ok) {
         setUploadStates(prev => ({
           ...prev,
-          [fieldName]: { uploading: false, progress: result.error || 'Upload gagal' }
+          [fieldName]: { uploading: false, progress: `Upload gagal (${res.status}). Coba lagi.` }
         }));
         return;
       }
 
-      updateField(fieldName, result.url);
+      const url = await res.text();
+
+      if (!url || !url.startsWith('https://')) {
+        setUploadStates(prev => ({
+          ...prev,
+          [fieldName]: { uploading: false, progress: 'Upload gagal — response tidak valid' }
+        }));
+        return;
+      }
+
+      updateField(fieldName, url.trim());
       setUploadStates(prev => ({
         ...prev,
         [fieldName]: { uploading: false, progress: 'Berhasil!', fileName: file.name }
