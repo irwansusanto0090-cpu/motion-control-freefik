@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Max 200MB for Catbox (but Netlify limited to 6MB)
+        // Max 200MB for Catbox
         const maxSize = 200 * 1024 * 1024;
         if (file.size > maxSize) {
             return NextResponse.json(
-                { error: 'Ukuran file terlalu besar. Maksimal 200MB (limit serverless 6MB).' },
+                { error: 'Ukuran file terlalu besar. Maksimal 200MB.' },
                 { status: 400 }
             );
         }
@@ -37,25 +37,18 @@ export async function POST(request: NextRequest) {
         // Upload to Catbox.moe
         const catboxForm = new FormData();
         catboxForm.append('reqtype', 'fileupload');
-        
-        // Convert to Blob to ensure standard compatibility
-        const fileContent = await file.arrayBuffer();
-        const blob = new Blob([fileContent], { type: file.type });
-        catboxForm.append('fileToUpload', blob, file.name || 'upload');
+        catboxForm.append('fileToUpload', file, file.name);
 
         const response = await fetch(CATBOX_API, {
             method: 'POST',
             body: catboxForm,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
         });
 
         if (!response.ok) {
             const text = await response.text();
             console.error('[Upload] Catbox error:', response.status, text);
             return NextResponse.json(
-                { error: `Upload ke server gagal (${response.status}). Jika file > 6MB, ini adalah limit server. Coba gunakan link URL langsung.` },
+                { error: `Upload gagal (${response.status}). Coba lagi.` },
                 { status: 502 }
             );
         }
@@ -65,7 +58,7 @@ export async function POST(request: NextRequest) {
         if (!url || !url.startsWith('https://')) {
             console.error('[Upload] Invalid Catbox response:', url);
             return NextResponse.json(
-                { error: 'Upload gagal — response tidak valid dari penyimpanan.' },
+                { error: 'Upload gagal — response tidak valid.' },
                 { status: 502 }
             );
         }
@@ -74,7 +67,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Upload gagal total. Coba gunakan link URL langsung.' },
+            { error: error instanceof Error ? error.message : 'Upload gagal' },
             { status: 500 }
         );
     }
