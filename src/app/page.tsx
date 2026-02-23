@@ -73,6 +73,21 @@ export default function HomePage() {
   };
 
   const handleFileUpload = async (fieldName: string, file: File) => {
+    // Netlify Serverless Limit is ~6MB. We check for 5.5MB to be safe.
+    const MAX_UPLOAD_SIZE = 5.5 * 1024 * 1024;
+
+    if (file.size > MAX_UPLOAD_SIZE) {
+      setUploadStates(prev => ({
+        ...prev,
+        [fieldName]: {
+          uploading: false,
+          progress: 'File > 6MB ditolak oleh server. Gunakan link URL langsung.',
+          fileName: file.name
+        }
+      }));
+      return;
+    }
+
     setUploadStates(prev => ({
       ...prev,
       [fieldName]: { uploading: true, progress: 'Mengunggah...', fileName: file.name }
@@ -105,7 +120,7 @@ export default function HomePage() {
     } catch {
       setUploadStates(prev => ({
         ...prev,
-        [fieldName]: { uploading: false, progress: 'Upload gagal — koneksi error' }
+        [fieldName]: { uploading: false, progress: 'Upload gagal atau timeout (> 6MB?)' }
       }));
     }
   };
