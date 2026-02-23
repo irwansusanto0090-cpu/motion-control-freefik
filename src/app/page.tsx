@@ -73,46 +73,41 @@ export default function HomePage() {
   };
 
   const handleFileUpload = async (fieldName: string, file: File) => {
-    // Netlify Serverless Limit is ~6MB. We check for 5.5MB to be safe.
-    const MAX_UPLOAD_SIZE = 5.5 * 1024 * 1024;
-
-    if (file.size > MAX_UPLOAD_SIZE) {
-      setUploadStates(prev => ({
-        ...prev,
-        [fieldName]: {
-          uploading: false,
-          progress: 'File > 6MB ditolak oleh server. Gunakan link URL langsung.',
-          fileName: file.name
-        }
-      }));
-      return;
-    }
-
     setUploadStates(prev => ({
       ...prev,
       [fieldName]: { uploading: true, progress: 'Mengunggah...', fileName: file.name }
     }));
 
     try {
-      const uploadForm = new FormData();
-      uploadForm.append('file', file);
+      // Upload directly from browser to catbox.moe — bypasses Netlify's 1MB function body limit
+      const catboxForm = new FormData();
+      catboxForm.append('reqtype', 'fileupload');
+      catboxForm.append('fileToUpload', file, file.name);
 
-      const res = await fetch('/api/upload', {
+      const res = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
-        body: uploadForm,
+        body: catboxForm,
       });
-
-      const result = await res.json();
 
       if (!res.ok) {
         setUploadStates(prev => ({
           ...prev,
-          [fieldName]: { uploading: false, progress: result.error || 'Upload gagal' }
+          [fieldName]: { uploading: false, progress: `Upload gagal (${res.status}). Coba lagi.` }
         }));
         return;
       }
 
-      updateField(fieldName, result.url);
+      const url = await res.text();
+
+      if (!url || !url.startsWith('https://')) {
+        setUploadStates(prev => ({
+          ...prev,
+          [fieldName]: { uploading: false, progress: 'Upload gagal — response tidak valid.' }
+        }));
+        return;
+      }
+
+      updateField(fieldName, url.trim());
       setUploadStates(prev => ({
         ...prev,
         [fieldName]: { uploading: false, progress: 'Berhasil!', fileName: file.name }
@@ -120,7 +115,7 @@ export default function HomePage() {
     } catch {
       setUploadStates(prev => ({
         ...prev,
-        [fieldName]: { uploading: false, progress: 'Upload gagal atau timeout (> 6MB?)' }
+        [fieldName]: { uploading: false, progress: 'Upload gagal — koneksi error' }
       }));
     }
   };
